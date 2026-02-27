@@ -33,8 +33,35 @@ const order = (req, res) => {
         return res.status(StatusCodes.BAD_REQUEST).end();
       }
 
-      return res.status(StatusCodes.OK).json(orderResults);
+      const order_id = orderResults.insertId;
+
+      let valuesOrderedBook = [];
+      items.forEach((item) => {
+        valuesOrderedBook.push([order_id, item.book_id, item.quantity]);
+      });
+
+      let sqlOrderedBook =
+        "INSERT INTO orderedBook (order_id, book_id, quantity) VALUES ?";
+      conn.query(sqlOrderedBook, [valuesOrderedBook], (err, results) => {
+        if (err) {
+          console.log(err);
+          return res.status(StatusCodes.BAD_REQUEST).end();
+        }
+
+        let result = deleteCartItems(items);
+        return res.status(StatusCodes.OK).json(orderResults);
+      });
     });
+  });
+};
+
+const deleteCartItems = (items) => {
+  let cartItemIds = items.map((item) => item.cartItemId);
+  let sqlDelete = "DELETE FROM cartItems WHERE id IN (?)";
+
+  conn.query(sqlDelete, [cartItemIds], (err, results) => {
+    if (err) return console.log(err);
+    return results;
   });
 };
 
